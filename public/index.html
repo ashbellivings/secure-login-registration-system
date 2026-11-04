@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure User Authentication System | Cybersecurity Internship Project</title>
+  <meta name="description" content="A full-stack secure user authentication system built with Node.js, Express, MongoDB, Mongoose, bcrypt password hashing, and server-side sessions." />
+  <meta property="og:title" content="Secure User Authentication System | Cybersecurity Internship Project" />
+  <meta property="og:description" content="A full-stack secure user authentication system built with Node.js, Express, MongoDB, Mongoose, bcrypt password hashing, and server-side sessions." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <!-- Top Navigation Bar Contract: Brand Wordmark | 4-5 Text Links | 1 Primary Action -->
+  <header class="top-header">
+    <div class="top-bar-inner">
+      <a href="/index.html" class="brand-wordmark">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <span>SecureAuth System</span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="/index.html" class="active">Overview</a>
+        <a href="/register.html">Register</a>
+        <a href="/login.html">Login</a>
+        <a href="/dashboard.html">Dashboard</a>
+        <a href="/security-controls.html">Security Controls</a>
+        <a href="/test-runner.html">Test Runner</a>
+      </nav>
+
+      <div class="header-action" id="nav-auth-slot">
+        <a href="/login.html" class="btn btn-secondary">Log In</a>
+        <a href="/register.html" class="btn btn-primary">Register</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Viewport -->
+  <main class="main-wrapper">
+    <section class="hero-banner">
+      <div class="hero-kicker">Cybersecurity Internship Project</div>
+      <h1 class="hero-title">Secure User Authentication System Using Full-Stack Web Technologies</h1>
+      <p class="hero-description">
+        A production-grade, full-stack web application implementing essential application security controls. Features salted Bcrypt password hashing (work factor 12), persistent server-side MongoDB sessions, session fixation defense, backend access control, rate limiting, and audit-ready security verification.
+      </p>
+      <div class="hero-actions">
+        <a href="/register.html" class="btn btn-primary">Create Your Account</a>
+        <a href="/security-controls.html" class="btn btn-secondary">Security Controls Guide</a>
+        <a href="/test-runner.html" class="btn btn-secondary">Run 17 Automated Tests</a>
+      </div>
+    </section>
+
+    <!-- Key Security Controls Overview Strip -->
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h2 class="feature-title">Password Hashing</h2>
+        <p class="feature-desc">
+          Passwords are never stored in plaintext. Passwords are transformed on the backend using Bcrypt with a work factor of 12. Password hashes are never returned across API boundaries.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+          </svg>
+        </div>
+        <h2 class="feature-title">Server-Side Sessions</h2>
+        <p class="feature-desc">
+          Utilizes Express-Session and connect-mongo with HttpOnly, SameSite cookies. Tokens are regenerated upon login to prevent session fixation, and destroyed on logout.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <h2 class="feature-title">Server Access Control</h2>
+        <p class="feature-desc">
+          Protected routes rely exclusively on verified server-side session state. Browser-supplied user IDs are never trusted, completely preventing IDOR privilege escalation attacks.
+        </p>
+      </div>
+    </div>
+
+    <!-- Live System Security Status Panel -->
+    <div class="panel">
+      <div class="panel-title">
+        <span>Active Security Controls & Architecture</span>
+        <span class="status-badge">Controls Operational</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Backend Web Framework</span>
+        <span class="meta-value">Node.js v22 · Express.js 4.21 (REST API)</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Database & ODM</span>
+        <span class="meta-value">MongoDB · Mongoose (Unique Email Index)</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Password Hashing Algorithm</span>
+        <span class="meta-value mono">Bcrypt ($2a$) · Cost Factor: 12 Rounds</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Session Store & Persistence</span>
+        <span class="meta-value">connect-mongo (MongoDB sessions collection)</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Session Cookie Security Flags</span>
+        <span class="meta-value mono">HttpOnly=true · SameSite=Lax · Path=/ · 60m TTL</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Brute-Force Rate Limiting</span>
+        <span class="meta-value mono">express-rate-limit (20 requests / 15 minutes window)</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">HTTP Security Headers</span>
+        <span class="meta-value mono">Helmet (CSP, X-Content-Type-Options, Frameguard)</span>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Academic Cybersecurity Internship Project · Secure User Authentication System · Learning Prototype</p>
+    <p style="margin-top: 0.35rem; color: #475569;">
+      Disclaimer: This application is built for educational cybersecurity demonstrations and has not undergone a commercial third-party security audit.
+    </p>
+  </footer>
+
+  <script src="/js/common.js"></script>
+</body>
+</html>

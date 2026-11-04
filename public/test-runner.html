@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Security Test Runner | Secure Authentication System</title>
+  <meta name="description" content="Automated security test runner verifying 17 application security test cases." />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <!-- Top Navigation Bar -->
+  <header class="top-header">
+    <div class="top-bar-inner">
+      <a href="/index.html" class="brand-wordmark">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <span>SecureAuth System</span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="/index.html">Overview</a>
+        <a href="/register.html">Register</a>
+        <a href="/login.html">Login</a>
+        <a href="/dashboard.html">Dashboard</a>
+        <a href="/security-controls.html">Security Controls</a>
+        <a href="/test-runner.html" class="active">Test Runner</a>
+      </nav>
+
+      <div class="header-action" id="nav-auth-slot">
+        <a href="/login.html" class="btn btn-secondary">Log In</a>
+        <a href="/register.html" class="btn btn-primary">Register</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-wrapper">
+    <div class="hero-banner" style="padding-top: 1rem;">
+      <div class="hero-kicker">Automated Verification Harness</div>
+      <h1 class="hero-title" style="font-size: 2.2rem;">Automated Security Test Suite</h1>
+      <p class="hero-description">
+        Directly verify the implementation of all required security controls against the live Node.js and MongoDB backend. Tests evaluate input validation, Bcrypt salt generation, session invalidation, IDOR defenses, and generic error handling.
+      </p>
+      <div class="hero-actions">
+        <button id="run-tests-btn" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Run All 17 Security Tests
+        </button>
+        <button id="copy-summary-btn" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem;" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          Export Audit Report (PDF)
+        </button>
+      </div>
+    </div>
+
+    <!-- Test Run Summary Box -->
+    <div id="test-summary-panel" class="panel hidden">
+      <div class="panel-title">
+        <span>Test Execution Summary</span>
+        <span id="summary-badge" class="status-badge">Complete</span>
+      </div>
+      <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1rem;">
+        <div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Executed</div>
+          <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);" id="total-count">0</div>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Passed Tests</div>
+          <div style="font-size: 1.5rem; font-weight: 700; color: var(--status-emerald);" id="passed-count">0</div>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Failed Tests</div>
+          <div style="font-size: 1.5rem; font-weight: 700; color: var(--status-crimson);" id="failed-count">0</div>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Execution Timestamp</div>
+          <div style="font-size: 0.95rem; font-family: var(--font-mono); color: var(--text-secondary); margin-top: 0.35rem;" id="timestamp">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detailed Test Results Table -->
+    <div class="panel" style="padding: 0; overflow-x: auto;">
+      <table class="test-table" id="test-table">
+        <thead>
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>Category & Test Scenario</th>
+            <th>Security Control Tested</th>
+            <th>Expected</th>
+            <th>Actual</th>
+            <th>Status</th>
+            <th>Audit Evidence & Finding</th>
+          </tr>
+        </thead>
+        <tbody id="test-table-body">
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+              Click "Run All 17 Security Tests" above to execute the automated verification suite against the backend.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Academic Cybersecurity Internship Project · Secure User Authentication System</p>
+  </footer>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/jspdf.umd.min.js"></script>
+  <script src="/js/jspdf.plugin.autotable.min.js"></script>
+  <script src="/js/test-runner.js"></script>
+</body>
+</html>

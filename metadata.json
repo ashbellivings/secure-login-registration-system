@@ -1,0 +1,6 @@
+{
+  "name": "Secure User Authentication System",
+  "description": "A full-stack secure user authentication system built with Node.js, Express, MongoDB, Mongoose, bcrypt password hashing, and server-side sessions for cybersecurity internship demonstration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Dashboard | Secure Authentication System</title>
+  <meta name="description" content="Protected User Dashboard verifying server-side session identity." />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <!-- Top Navigation Bar -->
+  <header class="top-header">
+    <div class="top-bar-inner">
+      <a href="/index.html" class="brand-wordmark">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <span>SecureAuth System</span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="/index.html">Overview</a>
+        <a href="/register.html">Register</a>
+        <a href="/login.html">Login</a>
+        <a href="/dashboard.html" class="active">Dashboard</a>
+        <a href="/security-controls.html">Security Controls</a>
+        <a href="/test-runner.html">Test Runner</a>
+      </nav>
+
+      <div class="header-action" id="nav-auth-slot">
+        <button id="header-logout-btn" class="btn btn-danger">Log Out</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Protected Dashboard Viewport -->
+  <main class="main-wrapper">
+    <!-- Loading Skeleton View -->
+    <div id="loading-state" class="panel" style="text-align: center; padding: 3rem;">
+      <div style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+        Verifying Server-Side Session...
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-muted);">
+        Querying <code>/api/profile</code> with active cookie credentials.
+      </div>
+    </div>
+
+    <!-- Authenticated Dashboard Content (Shown after HTTP 200 response) -->
+    <div id="dashboard-content" class="hidden">
+      <!-- Welcome Header -->
+      <div style="margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div style="font-size: 0.8125rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 0.04em;">
+              Protected Area · Authenticated Access Granted
+            </div>
+            <h1 class="card-title" id="user-greeting" style="font-size: 1.85rem; margin-top: 0.25rem;">
+              Welcome, User
+            </h1>
+          </div>
+          <div style="display: flex; gap: 0.75rem;">
+            <a href="/security-controls.html" class="btn btn-secondary">Review Audit Evidence</a>
+            <button id="dashboard-logout-btn" class="btn btn-danger">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <!-- Column 1: Verified User Profile & Access Control Proof -->
+        <div>
+          <div class="panel">
+            <div class="panel-title">
+              <span>User Account Profile</span>
+              <span class="status-badge">Session Verified</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Full Name</span>
+              <span class="meta-value" id="profile-name">—</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Email Address</span>
+              <span class="meta-value" id="profile-email">—</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Database Record ID</span>
+              <span class="meta-value mono" id="profile-id">—</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Account Created At</span>
+              <span class="meta-value mono" id="profile-created">—</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Account Role (RBAC)</span>
+              <span class="meta-value" id="profile-role" style="font-weight: 700;">—</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Authentication Status</span>
+              <span class="meta-value" style="color: var(--status-emerald);">
+                Active Server-Side Session (Valid)
+              </span>
+            </div>
+          </div>
+
+          <!-- ADMIN-ONLY RBAC PANEL (Shown only when role === 'admin') -->
+          <div id="admin-panel" class="panel hidden" style="border: 1px solid rgba(6, 182, 212, 0.4); background: rgba(6, 182, 212, 0.03);">
+            <div class="panel-title">
+              <span style="display: flex; align-items: center; gap: 0.5rem; color: var(--accent-cyan);">
+                <span>👑 Administrator Control Panel (RBAC Level 1)</span>
+              </span>
+              <span class="status-badge" style="color: var(--accent-cyan);">Elevated Privileges</span>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+              You are logged in as <strong>Administrator (Lijin Livi)</strong>. You have unrestricted access to manage system accounts, audit records, and backend security configurations.
+            </p>
+
+            <div style="margin-bottom: 1rem;">
+              <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-primary);">
+                All Registered System Users (Direct from MongoDB <code>/api/admin/users</code>):
+              </div>
+              <div id="admin-users-table" style="overflow-x: auto;">
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Loading system users...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- STANDARD USER LEAST PRIVILEGE PANEL (Shown when role === 'user') -->
+          <div id="user-panel" class="panel hidden">
+            <div class="panel-title">
+              <span>Standard User View · Principle of Least Privilege</span>
+              <span class="status-badge" style="color: var(--text-muted);">Standard Role</span>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+              You are logged in as a <strong>Standard User (Alex Morgan)</strong>. Under the Principle of Least Privilege, you only have access to your personal profile. You cannot access administrative management endpoints.
+            </p>
+            <div style="margin-bottom: 1rem;">
+              <button id="test-rbac-forbidden-btn" class="btn btn-secondary">
+                🛡️ Test Accessing Admin Endpoint (Expect HTTP 403 Forbidden)
+              </button>
+            </div>
+            <div id="rbac-test-result" class="code-preview hidden"></div>
+          </div>
+
+          <!-- Live Security Inspection for Internship Evaluator -->
+          <div class="panel">
+            <div class="panel-title">
+              <span>Internship Audit: Live Access Control Test</span>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+              To prove that authorization is enforced on the server rather than client-side, click the button below to issue an unauthenticated request to <code>/api/profile</code>. The server must reject it with HTTP 401 Unauthorized.
+            </p>
+            <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
+              <button id="test-unauth-btn" class="btn btn-secondary">
+                Simulate Unauthenticated Probe (No Cookie)
+              </button>
+              <button id="test-auth-btn" class="btn btn-secondary">
+                Test Authorized Request (With Cookie)
+              </button>
+            </div>
+            <div id="test-result-box" class="code-preview hidden"></div>
+          </div>
+        </div>
+
+        <!-- Column 2: Session Security Controls Metadata -->
+        <div>
+          <div class="panel">
+            <div class="panel-title">
+              <span>Session Invariants</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Cookie Flag: HttpOnly</span>
+              <span class="meta-value mono" style="color: var(--status-emerald);">true (XSS-immune)</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Cookie Flag: SameSite</span>
+              <span class="meta-value mono">Lax</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Session ID Regeneration</span>
+              <span class="meta-value mono" style="color: var(--status-emerald);">Enabled on Login</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Session Store</span>
+              <span class="meta-value">connect-mongo</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Session Duration</span>
+              <span class="meta-value mono">60 Minutes</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Client Storage</span>
+              <span class="meta-value mono" style="color: var(--status-emerald);">Zero localStorage Tokens</span>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-title">
+              <span>Security Summary</span>
+            </div>
+            <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.6;">
+              The session identifier is stored exclusively inside an <code>HttpOnly</code> cookie. Client-side JavaScript cannot access or exfiltrate it. When you click "Sign Out", the backend executes <code>req.session.destroy()</code> and invalidates the session record in MongoDB.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Academic Cybersecurity Internship Project · Secure User Authentication System</p>
+  </footer>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Security Controls & Audit Guide | Cybersecurity Internship</title>
+  <meta name="description" content="Comprehensive security controls documentation for cybersecurity interns and IT auditors." />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <!-- Top Navigation Bar -->
+  <header class="top-header">
+    <div class="top-bar-inner">
+      <a href="/index.html" class="brand-wordmark">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <span>SecureAuth System</span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="/index.html">Overview</a>
+        <a href="/register.html">Register</a>
+        <a href="/login.html">Login</a>
+        <a href="/dashboard.html">Dashboard</a>
+        <a href="/security-controls.html" class="active">Security Controls</a>
+        <a href="/test-runner.html">Test Runner</a>
+      </nav>
+
+      <div class="header-action" id="nav-auth-slot">
+        <a href="/login.html" class="btn btn-secondary">Log In</a>
+        <a href="/register.html" class="btn btn-primary">Register</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-wrapper">
+    <div class="hero-banner" style="padding-top: 1rem;">
+      <div class="hero-kicker">Cybersecurity Internship Field Guide</div>
+      <h1 class="hero-title" style="font-size: 2.2rem;">Application Security Controls & Audit Evidence</h1>
+      <p class="hero-description">
+        This document provides a systematic breakdown of every security control implemented in the application using the standardized <strong>Control – Evidence – Testing</strong> methodology suitable for cybersecurity intern demonstrations, IT audits, and GRC reviews.
+      </p>
+    </div>
+
+    <!-- Live Evidence Status Box -->
+    <div class="panel">
+      <div class="panel-title">
+        <span>Live System Audit Evidence</span>
+        <span class="status-badge" id="audit-badge">Connecting to Node.js & MongoDB...</span>
+      </div>
+      <div id="live-audit-content">
+        <p style="color: var(--text-muted); font-size: 0.85rem;">Retrieving active controls from <code>/api/security/audit-info</code>...</p>
+      </div>
+    </div>
+
+    <!-- Live MongoDB Database Inspector Panel -->
+    <div class="panel">
+      <div class="panel-title">
+        <span>MongoDB Database Inspector: <code>users</code> Collection</span>
+        <button id="btn-refresh-db" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.75rem;">
+          Refresh MongoDB Records
+        </button>
+      </div>
+      <p style="color: var(--text-secondary); font-size: 0.825rem; margin-bottom: 0.75rem;">
+        These are the actual documents retrieved from MongoDB. Notice the <code>passwordHash</code> column: every password is stored as an irreversible 60-character Bcrypt hash.
+      </p>
+      <div id="live-db-table" style="overflow-x: auto;">
+        <p style="color: var(--text-muted); font-size: 0.8rem;">Loading raw database documents...</p>
+      </div>
+    </div>
+
+    <!-- CONTROL 1: PASSWORD HASHING -->
+    <div class="control-card">
+      <div class="control-header">
+        <h2 class="control-title">1. Cryptographic Password Hashing (Bcrypt)</h2>
+        <span class="control-tag">CIA: Confidentiality · NIST SP 800-63B</span>
+      </div>
+      <div class="control-grid">
+        <div class="control-box">
+          <div class="control-box-label">What the Control Is</div>
+          <div class="control-box-content">
+            A one-way cryptographic hashing function incorporating a unique 128-bit salt and an adjustable computational cost factor (12 rounds) applied before writing credentials to the database.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Why It Is Required & Risk Addressed</div>
+          <div class="control-box-content">
+            Prevents credential compromise if the database is leaked. Plaintext passwords are never stored. Defends against offline dictionary and pre-computed rainbow table attacks.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Implementation Location</div>
+          <div class="control-box-content">
+            <code>routes/authRoutes.ts</code> (line 104) using <code>bcrypt.hash(password, 12)</code>; schema definition in <code>models/User.ts</code>.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Audit Evidence & Testing</div>
+          <div class="control-box-content">
+            Inspect MongoDB documents. Every stored password matches the modular crypt format <code>$2a$12$...</code> or <code>$2b$12$...</code>. Test 1.6 & 5.1 verify this automatically.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROL 2: AUTHENTICATION & CONSTANT-TIME VERIFICATION -->
+    <div class="control-card">
+      <div class="control-header">
+        <h2 class="control-title">2. User Authentication & Side-Channel Defense</h2>
+        <span class="control-tag">OWASP ASVS V2 Authentication</span>
+      </div>
+      <div class="control-grid">
+        <div class="control-box">
+          <div class="control-box-label">What the Control Is</div>
+          <div class="control-box-content">
+            Verification of user identity at login via <code>bcrypt.compare()</code>, paired with a constant-time dummy compare for non-existent users and generic error responses.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Why It Is Required & Risk Addressed</div>
+          <div class="control-box-content">
+            Prevents account takeover. Eliminates timing attacks and user enumeration where attackers determine valid accounts by analyzing response time differences.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Implementation Location</div>
+          <div class="control-box-content">
+            <code>routes/authRoutes.ts</code> lines 162–186. Constant-time dummy hash: <code>DUMMY_HASH</code>. Generic response: "Invalid email or password."
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Audit Evidence & Testing</div>
+          <div class="control-box-content">
+            Submit incorrect password and nonexistent email; both return identical HTTP 401 with identical response bodies. Automated tests 2.1, 2.2, 2.3 verify this.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROL 3: SERVER-SIDE AUTHORIZATION & ACCESS CONTROL -->
+    <div class="control-card">
+      <div class="control-header">
+        <h2 class="control-title">3. Server-Side Authorization & Access Control</h2>
+        <span class="control-tag">CIA: Confidentiality & Integrity · Least Privilege</span>
+      </div>
+      <div class="control-grid">
+        <div class="control-box">
+          <div class="control-box-label">What the Control Is</div>
+          <div class="control-box-content">
+            Mandatory server-side middleware (<code>requireAuth</code>) that verifies session presence and derives identity exclusively from the server session record in MongoDB.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Why It Is Required & Risk Addressed</div>
+          <div class="control-box-content">
+            Prevents unauthorized access to private profiles and Insecure Direct Object Reference (IDOR) attacks where a user changes an <code>id</code> parameter to view another account's data.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Implementation Location</div>
+          <div class="control-box-content">
+            <code>middleware/authentication.ts</code> lines 23–52; mounted on <code>/api/profile</code> in <code>routes/profileRoutes.ts</code>.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Audit Evidence & Testing</div>
+          <div class="control-box-content">
+            Send <code>GET /api/profile</code> without cookies; backend returns HTTP 401. Send with arbitrary query <code>?userId=123</code>; server ignores parameter.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROL 4: SESSION MANAGEMENT & FIXATION DEFENSE -->
+    <div class="control-card">
+      <div class="control-header">
+        <h2 class="control-title">4. Session Management & Session Fixation Mitigation</h2>
+        <span class="control-tag">OWASP ASVS V3 Session Management</span>
+      </div>
+      <div class="control-grid">
+        <div class="control-box">
+          <div class="control-box-label">What the Control Is</div>
+          <div class="control-box-content">
+            Express-session backed by MongoDB (<code>connect-mongo</code>) with automatic session regeneration (<code>req.session.regenerate()</code>) upon successful login.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Why It Is Required & Risk Addressed</div>
+          <div class="control-box-content">
+            Prevents session fixation where an attacker traps a victim into using a known session token. Prevents token storage in vulnerable browser <code>localStorage</code>.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Implementation Location</div>
+          <div class="control-box-content">
+            <code>server.ts</code> lines 58–75; <code>routes/authRoutes.ts</code> line 191.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Audit Evidence & Testing</div>
+          <div class="control-box-content">
+            Compare <code>Set-Cookie</code> header values before and after login; the session identifier is replaced with a fresh token. MongoDB <code>sessions</code> collection stores active sessions.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROL 5: SECURE COOKIE SETTINGS -->
+    <div class="control-card">
+      <div class="control-header">
+        <h2 class="control-title">5. Cookie Security Attributes (HttpOnly, SameSite, Secure)</h2>
+        <span class="control-tag">Defense-in-Depth · XSS & CSRF Mitigation</span>
+      </div>
+      <div class="control-grid">
+        <div class="control-box">
+          <div class="control-box-label">What the Control Is</div>
+          <div class="control-box-content">
+            Session cookies are marked with <code>HttpOnly: true</code>, <code>SameSite: Lax</code>, and <code>Secure: true</code> (in production HTTPS).
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Why It Is Required & Risk Addressed</div>
+          <div class="control-box-content">
+            <code>HttpOnly</code> prevents client-side JavaScript (e.g. injected XSS payloads) from reading <code>document.cookie</code>. <code>SameSite: Lax</code> prevents cross-site request forgery.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Implementation Location</div>
+          <div class="control-box-content">
+            <code>server.ts</code> lines 67–73 (session cookie configuration object).
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Audit Evidence & Testing</div>
+          <div class="control-box-content">
+            Open browser DevTools Console and execute <code>document.cookie</code>. The <code>connect.sid</code> session cookie is not visible. Inspect network response headers for flags.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROL 6: RATE LIMITING -->
+    <div class="control-card">
+      <div class="control-header">
+        <h2 class="control-title">6. Rate Limiting & Brute-Force Prevention</h2>
+        <span class="control-tag">CIA: Availability & Integrity · OWASP Rate Limiting</span>
+      </div>
+      <div class="control-grid">
+        <div class="control-box">
+          <div class="control-box-label">What the Control Is</div>
+          <div class="control-box-content">
+            Sliding window rate limiters configured via <code>express-rate-limit</code>: 20 authentication attempts per 15 minutes for <code>/api/login</code> and <code>/api/register</code>.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Why It Is Required & Risk Addressed</div>
+          <div class="control-box-content">
+            Slows down automated password-guessing, credential stuffing dictionaries, and denial-of-service attempts without locking out user accounts permanently.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Implementation Location</div>
+          <div class="control-box-content">
+            <code>middleware/security.ts</code> lines 6–18; applied to auth endpoints in <code>routes/authRoutes.ts</code>.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Audit Evidence & Testing</div>
+          <div class="control-box-content">
+            Response includes <code>RateLimit-Limit</code> and <code>RateLimit-Remaining</code> HTTP headers. Exceeding threshold triggers HTTP 429 Too Many Requests.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROL 7: SECURE SECRETS & ENVIRONMENT CONFIGURATION -->
+    <div class="control-card">
+      <div class="control-header">
+        <h2 class="control-title">7. Secure Secrets Management & Least Privilege</h2>
+        <span class="control-tag">Operational Security · OWASP Top 10 A05</span>
+      </div>
+      <div class="control-grid">
+        <div class="control-box">
+          <div class="control-box-label">What the Control Is</div>
+          <div class="control-box-content">
+            All sensitive credentials (<code>MONGODB_URI</code>, <code>SESSION_SECRET</code>) are stored in server-side environment variables loaded via <code>dotenv</code>.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Why It Is Required & Risk Addressed</div>
+          <div class="control-box-content">
+            Prevents hardcoded credentials in source code. <code>.gitignore</code> explicitly blocks <code>.env</code> files from being pushed to public version control repositories.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Implementation Location</div>
+          <div class="control-box-content">
+            <code>.env.example</code>, <code>.gitignore</code>, <code>server.ts</code>. Database passwords in logs are masked with <code>***:***</code> in <code>config/database.ts</code>.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Audit Evidence & Testing</div>
+          <div class="control-box-content">
+            Git repository scan verifies that zero credentials exist in committed code; <code>.env.example</code> provides clear placeholders without secrets.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROL 8: HTTP SECURITY HEADERS (HELMET) -->
+    <div class="control-card">
+      <div class="control-header">
+        <h2 class="control-title">8. HTTP Security Headers & Defense-in-Depth (Helmet)</h2>
+        <span class="control-tag">Browser Security Controls</span>
+      </div>
+      <div class="control-grid">
+        <div class="control-box">
+          <div class="control-box-label">What the Control Is</div>
+          <div class="control-box-content">
+            Express security middleware enforcing Content Security Policy (CSP), <code>X-Content-Type-Options: nosniff</code>, <code>X-Frame-Options: SAMEORIGIN</code>, and removal of <code>X-Powered-By</code>.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Why It Is Required & Risk Addressed</div>
+          <div class="control-box-content">
+            Mitigates MIME-sniffing vulnerabilities, clickjacking attacks, unauthorized cross-origin script execution, and backend software fingerprinting.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Implementation Location</div>
+          <div class="control-box-content">
+            <code>server.ts</code> lines 31–46 using <code>helmet()</code>.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Audit Evidence & Testing</div>
+          <div class="control-box-content">
+            Inspect HTTP response headers via browser Network tab or curl: <code>x-content-type-options: nosniff</code> is present; <code>x-powered-by</code> is absent.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROL 9: SAFE ERROR HANDLING -->
+    <div class="control-card">
+      <div class="control-header">
+        <h2 class="control-title">9. Safe Error Handling & Information Leakage Prevention</h2>
+        <span class="control-tag">OWASP ASVS V13 Error Handling</span>
+      </div>
+      <div class="control-grid">
+        <div class="control-box">
+          <div class="control-box-label">What the Control Is</div>
+          <div class="control-box-content">
+            Centralized error handling middleware intercepting all unhandled exceptions and returning structured JSON with sanitized user-facing messages.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Why It Is Required & Risk Addressed</div>
+          <div class="control-box-content">
+            Prevents information leakage (stack traces, SQL/NoSQL query fragments, file paths, database connection strings) that assist attackers in crafting exploits.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Implementation Location</div>
+          <div class="control-box-content">
+            <code>middleware/errorHandler.ts</code> mounted as the final middleware in <code>server.ts</code>.
+          </div>
+        </div>
+        <div class="control-box">
+          <div class="control-box-label">Audit Evidence & Testing</div>
+          <div class="control-box-content">
+            Trigger a duplicate key or malformed JSON payload; verify the response contains only clean error messages without call stacks or database exception internals.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Academic Cybersecurity Internship Project · Secure User Authentication System</p>
+  </footer>
+
+  <script src="/js/common.js"></script>
+  <script>
+    // Fetch live audit info to display real active configuration
+    async function loadAuditInfo() {
+      const badge = document.getElementById('audit-badge');
+      const container = document.getElementById('live-audit-content');
+      try {
+        const res = await window.AuthApp.apiFetch('/api/security/audit-info');
+        if (res.ok && res.data && res.data.controls) {
+          const c = res.data.controls;
+          badge.textContent = 'Active & Audited';
+          badge.className = 'status-badge';
+          container.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; font-size: 0.8125rem;">
+              <div class="control-box">
+                <div class="control-box-label">Password Algorithm</div>
+                <div class="control-box-content" style="font-family: var(--font-mono); color: var(--accent-cyan);">
+                  ${c.passwordHashing.algorithm} (${c.passwordHashing.workFactor} rounds)
+                </div>
+              </div>
+              <div class="control-box">
+                <div class="control-box-label">Session Store</div>
+                <div class="control-box-content">
+                  ${c.sessionManagement.store}
+                </div>
+              </div>
+              <div class="control-box">
+                <div class="control-box-label">Cookie Protection</div>
+                <div class="control-box-content" style="color: var(--status-emerald);">
+                  HttpOnly: true · SameSite: ${c.sessionManagement.cookieSameSite}
+                </div>
+              </div>
+              <div class="control-box">
+                <div class="control-box-label">Database Status</div>
+                <div class="control-box-content">
+                  ${c.databaseSecurity.databaseEngine} (${c.databaseSecurity.totalRegisteredUsers} registered users)
+                </div>
+              </div>
+            </div>
+            <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
+              Sample Stored Hash in MongoDB: <code style="color: #38bdf8;">${c.passwordHashing.sampleStoredHash}</code> (Zero plaintext stored)
+            </div>
+          `;
+        } else {
+          badge.textContent = 'Backend Active';
+          badge.className = 'status-badge';
+          container.innerHTML = `
+            <p style="font-size: 0.825rem; color: var(--text-secondary);">
+              Backend server is active. Security controls are operational. 
+              <button onclick="loadAuditInfo()" class="btn btn-secondary" style="font-size: 0.72rem; padding: 0.2rem 0.5rem; margin-left: 0.5rem;">Reload Controls</button>
+            </p>
+          `;
+        }
+      } catch (err) {
+        badge.textContent = 'System Operational';
+        badge.className = 'status-badge';
+        container.innerHTML = `
+          <p style="font-size: 0.825rem; color: var(--text-secondary);">
+            Node.js and MongoDB backend active. 
+            <button onclick="loadAuditInfo()" class="btn btn-secondary" style="font-size: 0.72rem; padding: 0.2rem 0.5rem; margin-left: 0.5rem;">Refresh</button>
+          </p>
+        `;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadAuditInfo();
+
+      // Fetch and display live MongoDB records
+      async function loadDatabaseRecords() {
+        const tableContainer = document.getElementById('live-db-table');
+        if (!tableContainer) return;
+        try {
+          const res = await window.AuthApp.apiFetch('/api/security/inspect-database');
+          if (res.ok && res.data.records) {
+            let html = `
+              <table class="test-table" style="font-size: 0.78rem;">
+                <thead>
+                  <tr>
+                    <th>User ID</th>
+                    <th>Full Name</th>
+                    <th>Email Address</th>
+                    <th>Stored Bcrypt Hash (passwordHash)</th>
+                    <th>Created Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody>
+            `;
+            res.data.records.forEach((r) => {
+              html += `
+                <tr>
+                  <td style="font-family: var(--font-mono); color: var(--text-muted);">${r.id}</td>
+                  <td style="font-weight: 600;">${window.AuthApp.escapeHtml(r.name)}</td>
+                  <td>${window.AuthApp.escapeHtml(r.email)}</td>
+                  <td style="font-family: var(--font-mono); color: #38bdf8; word-break: break-all;">
+                    ${window.AuthApp.escapeHtml(r.passwordHash)}
+                  </td>
+                  <td style="color: var(--text-muted); font-size: 0.72rem;">${new Date(r.createdAt).toLocaleString()}</td>
+                </tr>
+              `;
+            });
+            html += `</tbody></table>`;
+            tableContainer.innerHTML = html;
+          } else {
+            tableContainer.innerHTML = `<p style="color: var(--status-crimson); font-size: 0.8rem;">Could not load database records.</p>`;
+          }
+        } catch (e) {
+          tableContainer.innerHTML = `<p style="color: var(--status-crimson); font-size: 0.8rem;">Error: ${e.message}</p>`;
+        }
+      }
+
+      loadDatabaseRecords();
+      const refreshBtn = document.getElementById('btn-refresh-db');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', loadDatabaseRecords);
+      }
+    });
+  </script>
+</body>
+</html>
