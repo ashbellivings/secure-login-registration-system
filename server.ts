@@ -75,10 +75,44 @@ async function startServer() {
     })
   );
 
-  // 3. CORS Configuration (Restricted, credentials permitted)
+  // 3. CORS Configuration
+  // Defense-in-depth: In production on Render, frontend and backend are served from the same domain.
+  // Avoid reflecting arbitrary origins with credentials (origin: true), which is a security risk.
+  const appUrl = (process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || '').replace(/\/$/, '');
+
   app.use(
     cors({
-      origin: true,
+      origin: (origin, callback) => {
+        // Requests without origin header (same-origin browser navigation, curl, server-to-server)
+        if (!origin) {
+          return callback(null, true);
+        }
+
+        if (isProd) {
+          // In production: only allow the configured application domain (e.g. Render URL)
+          if (appUrl && origin === appUrl) {
+            return callback(null, true);
+          }
+          // Disallow arbitrary cross-origin requests with credentials in production
+          return callback(null, false);
+        }
+
+        // In development/test mode: allow localhost, 127.0.0.1, and Google Cloud / AI Studio preview domains
+        const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+        let isAiStudio = false;
+        try {
+          const parsed = new URL(origin);
+          isAiStudio = parsed.hostname.endsWith('.run.app');
+        } catch {
+          // ignore invalid url
+        }
+
+        if (isLocal || isAiStudio || (appUrl && origin === appUrl)) {
+          return callback(null, true);
+        }
+
+        return callback(null, false);
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'Authorization', 'X-Session-ID'],
@@ -127,14 +161,32 @@ async function startServer() {
   app.use('/api/profile', profileRoutes);
 
   // Automated test runner API endpoint for the web interface
-  app.post('/api/security/run-automated-tests', async (_req: Request, res: Response) => {
-    try {
-      const results = await executeSecurityTests();
-      res.json({ success: true, ...results });
-    } catch (err: any) {
-      res.status(500).json({ success: false, error: err.message });
-    }
-  });
+  // Disabled in production to prevent public users from executing automated security tests
+  // Kept available in development and testing environments only
+  if (!isProd) {
+    app.post('/api/security/run-automated-tests', async (_req: Request, res: Response) => {
+      try {
+        const results = await executeSecurityTests();
+        res.json({ success: true, ...results });
+      } catch (err: any) {
+        res.status(500).json({ success: false, error: err.message });
+      }
+    });
+  } else {
+    app.all('/api/security/run-automated-tests', (_req: Request, res: Response) => {
+      res.status(403).json({
+        success: false,
+        error: 'Automated security test runner is disabled in production environments.',
+      });
+    });
+  }
+
+  // In production, block public access to the test-runner UI
+  if (isProd) {
+    app.use(['/test-runner', '/test-runner.html'], (_req: Request, res: Response) => {
+      res.status(403).send('Automated security test runner is disabled in production.');
+    });
+  }
 
   // 8. Serve static files from 'public' directory
   app.use(express.static(path.join(__dirname, 'public')));
@@ -155,9 +207,11 @@ async function startServer() {
   app.get('/security-controls', (_req: Request, res: Response) => {
     res.sendFile(path.join(__dirname, 'public', 'security-controls.html'));
   });
-  app.get('/test-runner', (_req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, 'public', 'test-runner.html'));
-  });
+  if (!isProd) {
+    app.get('/test-runner', (_req: Request, res: Response) => {
+      res.sendFile(path.join(__dirname, 'public', 'test-runner.html'));
+    });
+  }
 
   // 9. Vite Middlewares for development asset support
   if (!isProd) {
