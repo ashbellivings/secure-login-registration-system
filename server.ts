@@ -76,22 +76,40 @@ async function startServer() {
   );
 
   // 3. CORS Configuration
-  // Since frontend and backend are served from the same domain on Render (same-origin),
-  // permissive CORS allowing all origins with credentials is removed to prevent security vulnerabilities.
-  // In development/testing, permit only localhost and cloud preview origins.
-  if (!isProd) {
-    app.use(
-      cors({
-        origin: [
-          /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,
-          /\.run\.app$/,
-        ],
-        credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'Authorization', 'X-Session-ID'],
-      })
-    );
-  }
+  // Enforce safe same-origin access since frontend and backend are served from the same domain.
+  // Unrestricted CORS (origin: true) is removed to avoid arbitrary origin reflection with credentials.
+  const appOrigin = (process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || '').replace(/\/$/, '');
+
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        // Allow same-origin requests (browsers omit Origin for same-origin GET/navigation, or send matching Origin)
+        if (!origin) {
+          return callback(null, true);
+        }
+
+        // Allow explicitly configured application domain
+        if (appOrigin && origin === appOrigin) {
+          return callback(null, true);
+        }
+
+        // In non-production environments, allow localhost and cloud preview domains
+        if (process.env.NODE_ENV !== 'production') {
+          const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+          const isAiStudio = /\.run\.app$/.test(origin);
+          if (isLocal || isAiStudio) {
+            return callback(null, true);
+          }
+        }
+
+        // Reject untrusted cross-origin requests; never allow arbitrary origins with credentials
+        return callback(null, false);
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'Authorization', 'X-Session-ID'],
+    })
+  );
 
   // 4. Request Body Parsers with safe strict payload limits
   app.use(express.json({ limit: '10kb' }));
@@ -135,9 +153,9 @@ async function startServer() {
   app.use('/api/profile', profileRoutes);
 
   // Automated test runner API endpoint
-  // Registered strictly in development and testing environments only
-  // NOT registered in production so no public routes allow executing tests
-  if (!isProd) {
+  // Register /api/security/run-automated-tests ONLY when NODE_ENV !== 'production'
+  // In production, this endpoint must not exist or execute
+  if (process.env.NODE_ENV !== 'production') {
     app.post('/api/security/run-automated-tests', async (_req: Request, res: Response) => {
       try {
         const results = await executeSecurityTests();
