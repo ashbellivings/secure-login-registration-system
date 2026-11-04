@@ -86,33 +86,4 @@ document.addEventListener('DOMContentLoaded', () => {
       submitBtn.textContent = 'Log In';
     }
   });
-
-  // Demo account autofill buttons
-  const fillAdminBtn = document.getElementById('btn-fill-admin');
-  const fillAlexBtn = document.getElementById('btn-fill-alex');
-  const fillAnalystBtn = document.getElementById('btn-fill-analyst');
-
-  if (fillAdminBtn) {
-    fillAdminBtn.addEventListener('click', () => {
-      emailInput.value = 'lijinlivi@gmail.com';
-      passwordInput.value = 'lijinlivi@2006';
-      hideAlert();
-    });
-  }
-
-  if (fillAlexBtn) {
-    fillAlexBtn.addEventListener('click', () => {
-      emailInput.value = 'alexmorgan@gmail.com';
-      passwordInput.value = 'alexmorgan1';
-      hideAlert();
-    });
-  }
-
-  if (fillAnalystBtn) {
-    fillAnalystBtn.addEventListener('click', () => {
-      emailInput.value = 'intern@cyberlab.org';
-      passwordInput.value = 'InternPassword123!';
-      hideAlert();
-    });
-  }
 });

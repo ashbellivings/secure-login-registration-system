@@ -11,8 +11,6 @@ import { createServer as createViteServer } from 'vite';
 
 import { connectDB, getActiveDbUri } from './config/database.ts';
 import { getSessionStore } from './config/sessionStore.ts';
-import { User } from './models/User.ts';
-import bcrypt from 'bcryptjs';
 import authRoutes from './routes/authRoutes.ts';
 import profileRoutes from './routes/profileRoutes.ts';
 import { errorHandler } from './middleware/errorHandler.ts';
@@ -24,9 +22,23 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = 3000;
 const isProd = process.env.NODE_ENV === 'production';
-const SESSION_SECRET = process.env.SESSION_SECRET || 'internship-dev-session-secret-change-in-production-min32chars';
+const PORT = Number(process.env.PORT) || 3000;
+
+// Read SESSION_SECRET from process.env; in production, enforce strict length & presence
+const rawSessionSecret = process.env.SESSION_SECRET?.trim();
+if (isProd) {
+  if (!rawSessionSecret || rawSessionSecret.length < 32) {
+    console.error(
+      '[Fatal Security Error] SESSION_SECRET environment variable is missing or shorter than 32 characters in production. Server startup aborted for security.'
+    );
+    process.exit(1);
+  }
+}
+
+// In development/test mode, provide a fallback to facilitate local development and automated testing
+const SESSION_SECRET = rawSessionSecret || 'development-local-only-session-secret-min32chars';
+
 const isCloudOrHttps = Boolean(
   process.env.APP_URL?.startsWith('https') ||
   process.env.NODE_ENV === 'production' ||
@@ -42,57 +54,6 @@ async function startServer() {
   // 1. Establish MongoDB connection (real Mongo or embedded MongoMemoryServer)
   const dbUri = await connectDB();
   const sessionStoreInstance = getSessionStore(dbUri);
-
-  // Pre-seed default demonstration accounts (Admin & Standard User)
-  try {
-    // Clean up previous admin email if present to ensure clean state
-    await User.deleteMany({ email: 'ashbellivi2020@gmail.com' });
-
-    const seedAccounts = [
-      {
-        name: 'Lijin Livi',
-        email: 'lijinlivi@gmail.com',
-        password: 'lijinlivi@2006',
-        role: 'admin',
-      },
-      {
-        name: 'Alex Morgan',
-        email: 'alexmorgan@gmail.com',
-        password: 'alexmorgan1',
-        role: 'user',
-      },
-      {
-        name: 'Cybersecurity Analyst',
-        email: 'intern@cyberlab.org',
-        password: 'InternPassword123!',
-        role: 'user',
-      },
-    ];
-
-    for (const acc of seedAccounts) {
-      let userDoc = await User.findOne({ email: acc.email });
-      if (!userDoc) {
-        const hash = await bcrypt.hash(acc.password, 12);
-        await User.create({
-          name: acc.name,
-          email: acc.email,
-          passwordHash: hash,
-          role: acc.role as any,
-        });
-        console.log(`[Database] Pre-seeded account: ${acc.email} (${acc.role})`);
-      } else {
-        // Ensure credentials and role are synchronized
-        const hash = await bcrypt.hash(acc.password, 12);
-        userDoc.passwordHash = hash;
-        userDoc.role = acc.role as any;
-        userDoc.name = acc.name;
-        await userDoc.save();
-        console.log(`[Database] Synchronized credentials and role for ${acc.email} (${acc.role})`);
-      }
-    }
-  } catch (seedErr: any) {
-    console.warn('[Database] Seed notice:', seedErr.message);
-  }
 
   // 2. HTTP Security Headers with Helmet
   // Configured to permit AI Studio iframe preview while enforcing defense-in-depth
@@ -142,26 +103,21 @@ async function startServer() {
       store: sessionStoreInstance,
       cookie: {
         httpOnly: true, // Prevent JavaScript document.cookie access (Mitigates XSS cookie theft)
-        secure: isCloudOrHttps,
-        sameSite: isCloudOrHttps ? 'none' : 'lax',
-        partitioned: true, // CHIPS partitioned cookies for cross-origin iframes
+        secure: isProd ? true : isCloudOrHttps,
+        sameSite: isProd ? 'lax' : (isCloudOrHttps ? 'none' : 'lax'),
+        partitioned: !isProd, // Partitioned cookies only for cross-origin preview iframes
         maxAge: 1000 * 60 * 60, // 1 hour TTL
         path: '/',
       } as any,
     })
   );
 
-  // Dynamically configure cookie for HTTPS/iframe preview vs HTTP localhost
+  // Dynamically configure cookie for HTTPS/Render deployment vs HTTP localhost
   app.use((req, _res, next) => {
     if (req.session && req.session.cookie) {
-      const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
-      if (isHttps) {
-        req.session.cookie.secure = true;
-        req.session.cookie.sameSite = 'none';
-      } else {
-        req.session.cookie.secure = false;
-        req.session.cookie.sameSite = 'lax';
-      }
+      const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https' || isProd;
+      req.session.cookie.secure = Boolean(isHttps);
+      req.session.cookie.sameSite = isProd ? 'lax' : (isHttps ? 'none' : 'lax');
     }
     next();
   });

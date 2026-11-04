@@ -16,11 +16,37 @@ export async function connectDB(): Promise<string> {
     return activeUri;
   }
 
+  const isProd = process.env.NODE_ENV === 'production';
   const configuredUri = process.env.MONGODB_URI?.trim();
   const hasValidScheme = Boolean(
     configuredUri && (configuredUri.startsWith('mongodb://') || configuredUri.startsWith('mongodb+srv://'))
   );
 
+  // In production, strictly require a valid real MongoDB URI; never fall back to an in-memory database
+  if (isProd) {
+    if (!configuredUri || !hasValidScheme) {
+      throw new Error(
+        '[Database] FATAL: Production environment requires a valid MONGODB_URI starting with "mongodb://" or "mongodb+srv://". Embedded/in-memory database fallback is strictly prohibited in production.'
+      );
+    }
+
+    console.log('[Database] Connecting to production MongoDB instance...');
+    try {
+      await mongoose.connect(configuredUri, {
+        serverSelectionTimeoutMS: 10000,
+      });
+      activeUri = configuredUri;
+      const sanitizedUri = configuredUri.replace(/\/\/[^@]+@/, '//***:***@');
+      console.log(`[Database] Successfully connected to production MongoDB at ${sanitizedUri}`);
+      return activeUri;
+    } catch (err: any) {
+      throw new Error(
+        `[Database] FATAL: Failed to connect to production MongoDB (${err.message}). Server startup aborted to prevent unsafe state.`
+      );
+    }
+  }
+
+  // Development & Test Mode: Attempt connection to configured URI if valid
   if (hasValidScheme && configuredUri && configuredUri !== 'inmemory') {
     try {
       console.log('[Database] Connecting to configured MongoDB instance...');
@@ -28,7 +54,6 @@ export async function connectDB(): Promise<string> {
         serverSelectionTimeoutMS: 5000,
       });
       activeUri = configuredUri;
-      // Mask password if present in URI for safe logging
       const sanitizedUri = configuredUri.replace(/\/\/[^@]+@/, '//***:***@');
       console.log(`[Database] Successfully connected to MongoDB at ${sanitizedUri}`);
       return activeUri;

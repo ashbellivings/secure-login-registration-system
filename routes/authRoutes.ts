@@ -187,11 +187,12 @@ router.post('/login', authLimiter, async (req: Request, res: Response, next: Nex
         return next(err);
       }
 
-      // Configure cookie attributes based on request protocol
-      const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+      // Configure cookie attributes based on request protocol & environment
+      const isProd = process.env.NODE_ENV === 'production';
+      const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https' || isProd;
       if (req.session.cookie) {
-        req.session.cookie.secure = isHttps;
-        req.session.cookie.sameSite = isHttps ? 'none' : 'lax';
+        req.session.cookie.secure = Boolean(isHttps);
+        req.session.cookie.sameSite = isProd ? 'lax' : (isHttps ? 'none' : 'lax');
       }
 
       // Establish authenticated session state on server
@@ -281,18 +282,15 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction): void =
     }
   }
 
-  const isCloudOrHttps = Boolean(
-    process.env.APP_URL?.startsWith('https') ||
-    process.env.NODE_ENV === 'production' ||
-    process.env.K_SERVICE
-  );
+  const isProd = process.env.NODE_ENV === 'production';
+  const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https' || isProd;
 
   // Invalidate cookie in client browser
   res.clearCookie('connect.sid', {
     path: '/',
     httpOnly: true,
-    sameSite: isCloudOrHttps ? 'none' : 'lax',
-    secure: isCloudOrHttps,
+    sameSite: isProd ? 'lax' : (isHttps ? 'none' : 'lax'),
+    secure: Boolean(isHttps),
   });
 
   if (!req.session || !req.session.userId) {
