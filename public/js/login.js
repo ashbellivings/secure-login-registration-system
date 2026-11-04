@@ -25,11 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
     showAlert('You have been securely logged out. Session destroyed.', 'info');
   } else if (sessionExpired) {
     showAlert('Your session has expired or is invalid. Please log in again.', 'error');
-  } else {
-    if (!emailInput.value) {
-      emailInput.value = 'alexmorgan@gmail.com';
-      passwordInput.value = 'alexmorgan1';
-    }
   }
 
   function showAlert(msg, type = 'error') {

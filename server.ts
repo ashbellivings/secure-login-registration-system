@@ -25,19 +25,16 @@ const __dirname = path.dirname(__filename);
 const isProd = process.env.NODE_ENV === 'production';
 const PORT = Number(process.env.PORT) || 3000;
 
-// Read SESSION_SECRET from process.env; in production, enforce strict length & presence
-const rawSessionSecret = process.env.SESSION_SECRET?.trim();
-if (isProd) {
-  if (!rawSessionSecret || rawSessionSecret.length < 32) {
+// Read SESSION_SECRET from process.env; in production, enforce strict presence and minimum length
+const SESSION_SECRET = process.env.SESSION_SECRET?.trim() || '';
+if (!SESSION_SECRET || SESSION_SECRET.length < 32) {
+  if (isProd) {
     console.error(
       '[Fatal Security Error] SESSION_SECRET environment variable is missing or shorter than 32 characters in production. Server startup aborted for security.'
     );
     process.exit(1);
   }
 }
-
-// In development/test mode, provide a fallback to facilitate local development and automated testing
-const SESSION_SECRET = rawSessionSecret || 'development-local-only-session-secret-min32chars';
 
 const isCloudOrHttps = Boolean(
   process.env.APP_URL?.startsWith('https') ||
