@@ -53,14 +53,7 @@ export function verifyCsrfToken(req: Request, res: Response, next: NextFunction)
   }
 
   // Exempt automated internal test endpoint ONLY if run in development or testing environments
-  if (req.path === '/api/security/run-automated-tests') {
-    if (process.env.NODE_ENV === 'production') {
-      res.status(403).json({
-        success: false,
-        error: 'Automated security test runner is disabled in production environments.',
-      });
-      return;
-    }
+  if (process.env.NODE_ENV !== 'production' && req.path === '/api/security/run-automated-tests') {
     return next();
   }
 
