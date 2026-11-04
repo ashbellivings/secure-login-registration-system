@@ -62,40 +62,14 @@ export async function connectDB(): Promise<string> {
     }
   }
 
+  // Development & Test Mode fallback: Initialize embedded MongoMemoryServer
   const isTest = process.env.NODE_ENV === 'test' || process.argv.some((a) => a.includes('test'));
-
-  if (!isTest) {
-    // Spin up embedded real MongoDB with disk persistence for dev server
-    console.log('[Database] Initializing embedded MongoDB server with local persistence...');
-    const dataDir = path.resolve(process.cwd(), '.data/mongodb');
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-
-    try {
-      memoryServer = await MongoMemoryServer.create({
-        instance: {
-          dbName: 'secure_auth_db',
-          dbPath: dataDir,
-          storageEngine: 'wiredTiger',
-        },
-      });
-    } catch (err: any) {
-      console.warn(`[Database] Failed to bind custom dbPath, falling back to standard memory server`);
-      memoryServer = await MongoMemoryServer.create({
-        instance: {
-          dbName: 'secure_auth_db',
-        },
-      });
-    }
-  } else {
-    // Isolated in-memory instance for test runner to prevent directory lock conflicts
-    memoryServer = await MongoMemoryServer.create({
-      instance: {
-        dbName: 'secure_auth_test_db',
-      },
-    });
-  }
+  console.log('[Database] Initializing embedded MongoDB memory server...');
+  memoryServer = await MongoMemoryServer.create({
+    instance: {
+      dbName: isTest ? 'secure_auth_test_db' : 'secure_auth_db',
+    },
+  });
 
   activeUri = memoryServer.getUri();
   await mongoose.connect(activeUri);
