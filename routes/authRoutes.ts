@@ -377,10 +377,10 @@ router.get('/auth/status', async (req: Request, res: Response): Promise<void> =>
 
 /**
  * GET /api/security/audit-info
- * Cybersecurity internship inspection endpoint.
- * Provides verifiable evidence of applied controls without leaking secrets.
+ * Cybersecurity inspection endpoint.
+ * Protected with requireAuth so audit data is not exposed publicly.
  */
-router.get('/security/audit-info', async (_req: Request, res: Response): Promise<void> => {
+router.get('/security/audit-info', requireAuth, async (_req: Request, res: Response): Promise<void> => {
   try {
     const userCount = await User.countDocuments();
     // Retrieve sample user record showing masked password hash format for demonstration
@@ -435,10 +435,15 @@ router.get('/security/audit-info', async (_req: Request, res: Response): Promise
 
 /**
  * GET /api/security/inspect-database
- * Allows internship auditors to directly inspect the MongoDB 'users' collection records
- * showing user names, emails, and full Bcrypt password hashes ($2b$12$...).
+ * Available exclusively in non-production/testing mode for development evaluation.
+ * In production, this endpoint is completely disabled to avoid public database exposure.
  */
 router.get('/security/inspect-database', async (_req: Request, res: Response): Promise<void> => {
+  if (process.env.NODE_ENV === 'production') {
+    res.status(404).json({ success: false, error: 'Not found.' });
+    return;
+  }
+
   try {
     const rawUsers = await User.find({}).select('name email passwordHash createdAt updatedAt');
     res.status(200).json({

@@ -165,8 +165,15 @@ async function startServer() {
       }
     });
 
-    app.get('/test-runner', (_req: Request, res: Response) => {
+    app.get(['/test-runner', '/test-runner.html'], (_req: Request, res: Response) => {
       res.sendFile(path.join(__dirname, 'public', 'test-runner.html'));
+    });
+  }
+
+  // Production security: Ensure /test-runner.html cannot be accessed in production
+  if (isProd) {
+    app.use(['/test-runner', '/test-runner.html', '/js/test-runner.js'], (_req: Request, res: Response) => {
+      res.status(404).send('Not Found');
     });
   }
 
